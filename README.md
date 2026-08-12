@@ -1,140 +1,453 @@
-# AI Workflow Assurance Demo
+# AI Workflow Demo
 
-> **Clean-room portfolio demo for accounting / assurance recruiting**  
-> A small end-to-end workflow showing how customer input, automated content generation, human review, publication controls, and auditability can be designed together.
+> **AI-assisted personalized content workflow — Portfolio Demo**  
+> 고객 입력부터 콘텐츠 생성, 관리자 검토, 상태 관리, 최종 결과 전달까지 이어지는 업무 흐름을 구조화한 포트폴리오용 데모 프로젝트입니다.
 
-This repository is **not a copy of a production service**. It was rebuilt from scratch for portfolio use with synthetic orders, a deterministic local mock generator, generic UI, and no production credentials or commercial assets.
+---
 
-## Why I built this
+## Links
 
-The project started from a practical question: **how can a repetitive, personalized service workflow be turned into a structured and controllable process?**
+| 구분 | 링크 |
+|---|---|
+| **Portfolio Demo / GitHub** | 현재 Repository |
+| **Live Service** | https://say-melody-production-ffe1.up.railway.app/ |
+| **Service Product Page** | https://smartstore.naver.com/thelimekorea/products/11494992666 |
 
-The demo focuses less on flashy AI output and more on the parts that matter in a real process:
+> **Note**  
+> 본 Repository는 실제 운영 서비스의 소스코드를 공개한 것이 아닙니다.  
+> 실제 프로젝트를 통해 경험한 문제 해결 과정과 시스템 설계 방식을 보여주기 위해,  
+> 포트폴리오 목적으로 별도 재구현한 **clean-room demo**입니다.
 
-- validating that a request belongs to a known order;
-- normalizing customer input before processing;
-- separating generation from human approval;
-- preventing publication before review;
-- preserving an audit trail of important state changes;
-- keeping secrets and production intellectual property out of the repository.
+---
 
-## Demo flow
+## Overview
 
-```mermaid
-flowchart LR
-  A[Order] --> B[Customer Verify]
-  B --> C[Intake]
-  C --> D[Mock AI Draft]
-  D --> E[Admin Review]
-  E -->|approve| F[Publish Gate]
-  E -->|change request| C
-  F --> G[Public Result]
+개인화된 콘텐츠 서비스는 단순히 AI를 호출해 결과물을 만드는 것으로 끝나지 않습니다.
+
+실제 운영 과정에서는 다음과 같은 흐름이 필요합니다.
+
+```text
+Order
+  ↓
+Customer Verification
+  ↓
+Customer Input
+  ↓
+Content Generation
+  ↓
+Admin Review
+  ↓
+Approval
+  ↓
+Publication
+  ↓
+Final Delivery
 ```
 
-### Workflow states
+이 프로젝트는 이러한 반복 업무를 하나의 시스템 흐름으로 구조화하는 데 초점을 두었습니다.
 
-`ORDER_VERIFIED → INTAKE_SUBMITTED → DRAFT_GENERATED → APPROVED → PUBLISHED`
+특히 다음 문제를 어떻게 해결할 것인지 고민했습니다.
 
-A draft cannot be published directly from the generated state.
+- 고객과 주문을 어떻게 정확하게 식별할 것인가
+- 고객 입력을 어떻게 일정한 데이터 구조로 관리할 것인가
+- 자동 생성 결과를 바로 공개하지 않고 어떻게 검토할 것인가
+- 현재 진행 상태를 시스템상 어떻게 일관되게 관리할 것인가
+- 잘못된 단계 진행이나 중복 처리를 어떻게 방지할 것인가
+- 운영에 필요한 추적성과 관리 편의성을 어떻게 확보할 것인가
 
-## Run locally
+---
 
-Requirements: **Node.js 20+**. No npm dependencies are required.
+## Why I Built This
+
+실제 서비스 운영에서는 여러 종류의 정보가 서로 연결됩니다.
+
+```text
+주문 정보
++ 고객 정보
++ 사연 및 입력 데이터
++ 생성된 콘텐츠
++ 관리자 검토
++ 최종 결과물
+```
+
+각 업무가 개별적으로 처리되면 누락, 중복, 상태 혼선, 전달 오류가 발생하기 쉽습니다.
+
+따라서 단순 페이지 제작보다 먼저 업무 전체를 **data flow + state transition** 관점에서 정리하고,  
+각 단계가 하나의 프로젝트 단위로 연결되도록 설계했습니다.
+
+---
+
+## Core Features
+
+### 1. Customer Verification
+
+고객은 주문번호와 주문자명을 이용해 자신의 프로젝트에 접근합니다.
+
+```text
+Order Number
++
+Customer Name
+→
+Project Verification
+```
+
+데모에서는 실제 고객정보 대신 synthetic data를 사용합니다.
+
+---
+
+### 2. Structured Customer Input
+
+고객이 콘텐츠 제작에 필요한 정보를 직접 입력합니다.
+
+예시:
+
+- 받는 사람
+- 보내는 사람
+- 관계
+- 상황
+- 사연
+- 전달하고 싶은 메시지
+
+입력된 데이터는 하나의 프로젝트에 연결되어 이후 생성 및 검토 단계에서 사용됩니다.
+
+---
+
+### 3. Content Generation
+
+고객 입력을 기반으로 개인화된 초안을 생성합니다.
+
+공개 Repository에서는 실제 운영 프롬프트나 외부 AI credential을 노출하지 않기 위해  
+**Local Mock Generator**를 사용합니다.
+
+```text
+Customer Input
+      ↓
+Mock Generator
+      ↓
+Generated Draft
+```
+
+실제 서비스와 동일한 proprietary prompt나 generation logic을 공개하지 않으면서도,  
+전체 시스템의 데이터 흐름과 처리 구조를 확인할 수 있도록 구성했습니다.
+
+---
+
+### 4. Admin Workflow
+
+관리자는 프로젝트의 진행 상태와 생성 결과를 확인할 수 있습니다.
+
+주요 기능:
+
+- 주문 및 프로젝트 조회
+- 고객 입력 확인
+- 생성 결과 확인
+- 검토 및 승인
+- 프로젝트 상태 변경
+- 최종 결과 공개
+
+---
+
+### 5. State Management
+
+프로젝트는 명확한 상태를 가지고 다음 단계로 이동합니다.
+
+```text
+ORDER_CREATED
+      ↓
+CUSTOMER_SUBMITTED
+      ↓
+DRAFT_GENERATED
+      ↓
+UNDER_REVIEW
+      ↓
+APPROVED
+      ↓
+PUBLISHED
+```
+
+각 화면을 단순 연결하는 것이 아니라  
+**현재 데이터 상태에 따라 가능한 작업이 달라지는 구조**로 설계했습니다.
+
+---
+
+### 6. Human Review Before Publication
+
+자동 생성된 결과물이 고객에게 바로 노출되지 않도록  
+관리자의 검토와 승인 단계를 별도로 두었습니다.
+
+```text
+Generated Content
+      ↓
+Human Review
+      ↓
+Approval
+      ↓
+Publication
+```
+
+AI를 최종 의사결정자로 두기보다  
+**자동화와 사람의 검토를 결합하는 workflow**를 지향했습니다.
+
+---
+
+## Workflow Design
+
+전체 흐름은 다음과 같습니다.
+
+```text
+[Order]
+   │
+   ▼
+[Customer Verification]
+   │
+   ▼
+[Customer Input]
+   │
+   ▼
+[Draft Generation]
+   │
+   ▼
+[Admin Review]
+   │
+   ├── Revision
+   │
+   ▼
+[Approval]
+   │
+   ▼
+[Publication]
+   │
+   ▼
+[Customer Result]
+```
+
+---
+
+## Risk & Control Perspective
+
+시스템을 구현하면서 단순 기능 구현뿐 아니라  
+각 단계에서 발생할 수 있는 운영상 오류도 함께 고려했습니다.
+
+| Risk | Control / Design |
+|---|---|
+| 주문 중복 생성 | 주문번호 중복 확인 |
+| 다른 고객 데이터 접근 | 주문번호 + 주문자 기반 프로젝트 확인 |
+| 필수 정보 누락 | 입력 validation |
+| 미완성 결과 공개 | publication state 분리 |
+| 자동 생성 결과 오류 | human review 단계 |
+| 상태 혼선 | explicit workflow state |
+| 민감정보 노출 | synthetic data / environment separation |
+| 외부 서비스 의존 | mock generation layer 분리 |
+
+---
+
+## Architecture
+
+```text
+┌────────────────────┐
+│   Customer UI      │
+└─────────┬──────────┘
+          │
+          ▼
+┌────────────────────┐
+│ Application Server │
+│                    │
+│ Verification       │
+│ Validation         │
+│ Workflow Logic     │
+│ State Management   │
+└──────┬────────┬────┘
+       │        │
+       │        ▼
+       │   ┌────────────────┐
+       │   │ Mock Generator │
+       │   └────────────────┘
+       │
+       ▼
+┌────────────────────┐
+│    Demo Data       │
+└────────────────────┘
+
+          ▲
+          │
+┌─────────┴──────────┐
+│      Admin UI      │
+└────────────────────┘
+```
+
+---
+
+## Project Structure
+
+```text
+AI-Workflow-Demo/
+├─ README.md
+├─ NOTICE.md
+├─ SECURITY.md
+│
+├─ data/
+│  └─ synthetic-orders.json
+│
+├─ docs/
+│  ├─ ARCHITECTURE.md
+│  ├─ DATA_FLOW.md
+│  └─ PORTFOLIO_BOUNDARY.md
+│
+├─ public/
+│  ├─ index.html
+│  ├─ customer.html
+│  ├─ admin.html
+│  └─ result.html
+│
+├─ src/
+│  ├─ ai/
+│  │  └─ mock-generator.js
+│  ├─ data/
+│  ├─ domain/
+│  ├─ http/
+│  └─ server.js
+│
+├─ package.json
+└─ .gitignore
+```
+
+---
+
+## Tech Stack
+
+- **Runtime** — Node.js
+- **Backend** — Node HTTP Server
+- **Frontend** — HTML / CSS / JavaScript
+- **Data** — JSON-based demo repository
+- **Generation** — Local Mock Generator
+- **Version Control** — Git / GitHub
+
+외부 서비스 없이도 포트폴리오 데모를 바로 실행할 수 있도록 의존성을 최소화했습니다.
+
+---
+
+## Run Locally
+
+### Requirements
+
+```text
+Node.js 20+
+```
+
+### Start
 
 ```bash
 npm start
 ```
 
-Open:
-
-- Customer demo: `http://localhost:3000/customer.html`
-- Admin demo: `http://localhost:3000/admin.html`
-
-### Demo credentials
-
-Customer sample:
+브라우저에서:
 
 ```text
-Order number: DEMO-2026-0001
-Customer name: 김민준
+http://localhost:3000
 ```
 
-Admin password:
+---
+
+## Demo Account
+
+### Customer
 
 ```text
-portfolio-demo
+Order Number: DEMO-2026-0001
+Customer Name: 김민준
 ```
 
-You can override the admin password with `DEMO_ADMIN_PASSWORD`.
-
-## What to try
-
-1. Verify the sample customer order.
-2. Submit a story and generate a mock draft.
-3. Open the Admin page and log in.
-4. Observe `DRAFT_GENERATED` and the audit events.
-5. Approve the draft.
-6. Publish it only after approval.
-7. Open the generated public result URL.
-8. Try manually creating the same order number twice and observe duplicate prevention.
-
-## Control-oriented design
-
-| Risk | Demo response |
-|---|---|
-| duplicate/fabricated order | unique order validation |
-| cross-customer access | order-scoped customer session |
-| incomplete input | required/minimum input validation |
-| AI output released automatically | explicit human review |
-| approval bypass | publish status gate |
-| weak traceability | actor/time/event audit trail |
-| leaked secrets | environment-based configuration |
-| portfolio IP leakage | clean-room code + synthetic data |
-
-See [`docs/CONTROLS_AND_RISKS.md`](docs/CONTROLS_AND_RISKS.md) for the full assurance-style mapping.
-
-## Repository structure
+### Admin
 
 ```text
-ai-workflow-assurance-demo/
-├─ README.md
-├─ NOTICE.md
-├─ SECURITY.md
-├─ data/
-│  └─ synthetic-orders.json
-├─ docs/
-│  ├─ ARCHITECTURE.md
-│  ├─ CONTROLS_AND_RISKS.md
-│  ├─ DATA_FLOW.md
-│  ├─ INTERVIEW_NOTES.md
-│  └─ PORTFOLIO_BOUNDARY.md
-├─ public/
-│  ├─ index.html
-│  ├─ customer.html
-│  ├─ admin.html
-│  ├─ result.html
-│  ├─ css/app.css
-│  └─ js/
-└─ src/
-   ├─ ai/mock-generator.js
-   ├─ data/demo-store.js
-   ├─ domain/
-   ├─ http/
-   └─ server.js
+Password: portfolio-demo
 ```
 
-## Deliberately excluded
+> 위 정보와 Repository 내 모든 고객 데이터는 포트폴리오 시연을 위해 생성된 가상 데이터입니다.
 
-This demo does **not** include real e-commerce connectors, cloud database credentials, production schemas, customer photos/audio, production prompts, production business rules, or live external AI calls. See [`NOTICE.md`](NOTICE.md).
+---
 
-## Production extension
+## Live Service
 
-If this were hardened for a real service, the next priorities would be persistent database constraints and RLS, managed secrets, idempotent external connector jobs, queue/retry handling, immutable audit logs, monitoring/alerting, and stronger role-based approval controls.
+이 데모를 만들게 된 배경이 된 실제 서비스는 아래 링크에서 확인할 수 있습니다.
 
-## Interview framing
+### Service
 
-The main point of this repository is not “I built an AI website.” It is:
+**SAYMELODY**
 
-> **I translated an ambiguous manual workflow into explicit data states, identified operational risks, designed preventive/detective controls around those risks, and implemented a small system that preserves human accountability and traceability.**
+https://say-melody-production-ffe1.up.railway.app/
 
-See [`docs/INTERVIEW_NOTES.md`](docs/INTERVIEW_NOTES.md) for a concise interview explanation.
+### Product Page
+
+실제 판매 페이지:
+
+https://smartstore.naver.com/thelimekorea/products/11494992666
+
+실제 서비스는 고객 정보 수집, 콘텐츠 제작, 관리자 운영, 결과 전달 등  
+보다 많은 기능과 외부 서비스 연동을 포함하고 있습니다.
+
+다만 본 GitHub Repository에는 해당 운영 시스템의 실제 소스코드나  
+내부 운영 로직을 그대로 포함하지 않습니다.
+
+---
+
+## Portfolio Boundary
+
+본 Repository는 **포트폴리오 목적의 독립적인 재구현 프로젝트**입니다.
+
+다음 내용은 공개하지 않습니다.
+
+- 실제 운영 서비스 source code
+- 실제 고객 개인정보
+- 실제 주문 데이터
+- 운영 DB
+- API Key / Secret
+- 환경변수
+- proprietary AI prompt
+- production-specific business logic
+- 외부 주문 플랫폼의 실제 integration code
+- commercial image / music / brand assets
+- 내부 운영 정책 및 비공개 데이터
+
+모든 고객 및 주문 데이터는 synthetic data입니다.
+
+---
+
+## What This Project Demonstrates
+
+이 프로젝트를 통해 보여주고자 한 핵심은  
+특정 프레임워크나 AI API 사용 경험 자체가 아닙니다.
+
+**반복적으로 이루어지는 업무를 분석하고,  
+이를 데이터·상태·사용자 역할·처리 단계가 연결된 시스템으로 구조화하는 과정**에 초점을 두었습니다.
+
+```text
+Problem
+   ↓
+Workflow
+   ↓
+Data Structure
+   ↓
+Business Logic
+   ↓
+Validation
+   ↓
+Human Review
+   ↓
+State Transition
+   ↓
+Final Delivery
+```
+
+개별 기능을 구현하는 것보다  
+각 기능이 전체 업무 흐름에서 어떤 역할을 하는지 이해하고 연결하는 것을 중요하게 생각했습니다.
+
+---
+
+## Repository Notice
+
+This repository is an independently reconstructed clean-room portfolio demonstration.
+
+It does not contain production source code, real customer information, credentials, proprietary prompts, commercial assets, or confidential business data from the live service.
+
+The live-service and product-page links are provided only to demonstrate that the underlying workflow was developed in the context of an actual operating service.
