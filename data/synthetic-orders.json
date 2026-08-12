@@ -1,0 +1,20 @@
+[
+  {
+    "id": "ord_demo_001",
+    "orderNumber": "DEMO-2026-0001",
+    "customerName": "김민준",
+    "status": "ORDER_VERIFIED"
+  },
+  {
+    "id": "ord_demo_002",
+    "orderNumber": "DEMO-2026-0002",
+    "customerName": "이서연",
+    "status": "ORDER_VERIFIED"
+  },
+  {
+    "id": "ord_demo_003",
+    "orderNumber": "DEMO-2026-0003",
+    "customerName": "박지훈",
+    "status": "ORDER_VERIFIED"
+  }
+]

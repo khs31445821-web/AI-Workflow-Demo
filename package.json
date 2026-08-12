@@ -1,0 +1,14 @@
+{
+  "name": "ai-workflow-assurance-demo",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Clean-room portfolio demo of a controlled AI-assisted workflow for accounting/assurance recruiting.",
+  "type": "module",
+  "scripts": {
+    "start": "node src/server.js",
+    "check": "node --check src/server.js && node --check src/domain/order-service.js && node --check src/ai/mock-generator.js && node --check public/js/customer.js && node --check public/js/admin.js && node --check public/js/result.js"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
